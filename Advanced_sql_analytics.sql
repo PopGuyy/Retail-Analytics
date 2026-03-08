@@ -1,0 +1,84 @@
+USE WAREHOUSE RETAIL_WH;
+USE DATABASE RETAIL_DW;
+USE SCHEMA RETAIL;
+
+WITH yearly_sales AS (
+    SELECT 
+        D.YEAR,
+        SUM(F.SALES) AS total_sales
+    FROM FACT_SALES F
+    JOIN DIM_DATE D 
+        ON F.ORDER_DATE = D.DATE_KEY
+    GROUP BY D.YEAR
+)
+
+SELECT 
+    YEAR,
+    total_sales,
+    ROUND(
+        (total_sales - LAG(total_sales) OVER (ORDER BY YEAR))
+/ NULLIF(LAG(total_sales) OVER (ORDER BY YEAR), 0) * 100,
+        2
+    ) AS YoY_Growth_Percentage
+FROM yearly_sales
+ORDER BY YEAR;
+
+SELECT 
+    D.YEAR,
+    P.PRODUCT_NAME,
+    SUM(F.SALES) AS total_sales,
+    RANK() OVER (
+        PARTITION BY D.YEAR
+        ORDER BY SUM(F.SALES) DESC
+    ) AS sales_rank
+FROM FACT_SALES F
+JOIN DIM_PRODUCT P 
+    ON F.PRODUCT_ID = P.PRODUCT_ID
+JOIN DIM_DATE D 
+    ON F.ORDER_DATE = D.DATE_KEY
+GROUP BY D.YEAR, P.PRODUCT_NAME
+QUALIFY sales_rank <= 3
+ORDER BY D.YEAR, sales_rank;
+
+SELECT 
+    C.CUSTOMER_ID,
+    C.CUSTOMER_NAME,
+    D.YEAR,
+    D.MONTH,
+    SUM(F.SALES) AS monthly_sales,
+    SUM(SUM(F.SALES)) OVER (
+        PARTITION BY C.CUSTOMER_ID
+        ORDER BY D.YEAR, D.MONTH
+    ) AS running_total_sales
+FROM FACT_SALES F
+JOIN DIM_CUSTOMER C 
+    ON F.CUSTOMER_ID = C.CUSTOMER_ID
+JOIN DIM_DATE D 
+    ON F.ORDER_DATE = D.DATE_KEY
+GROUP BY C.CUSTOMER_ID, C.CUSTOMER_NAME, D.YEAR, D.MONTH
+ORDER BY C.CUSTOMER_ID, D.YEAR, D.MONTH;
+
+WITH customer_sales AS (
+    SELECT 
+        C.CUSTOMER_ID,
+        C.CUSTOMER_NAME,
+        SUM(F.SALES) AS total_sales
+    FROM FACT_SALES F
+    JOIN DIM_CUSTOMER C 
+        ON F.CUSTOMER_ID = C.CUSTOMER_ID
+    GROUP BY C.CUSTOMER_ID, C.CUSTOMER_NAME
+),
+ranked_customers AS (
+    SELECT *,
+        NTILE(10) OVER (ORDER BY total_sales DESC) AS sales_decile
+    FROM customer_sales
+)
+
+SELECT *
+FROM ranked_customers
+WHERE sales_decile = 1
+ORDER BY total_sales DESC;
+
+--TRUNCATE TABLE FACT_SALES;
+
+--SELECT COUNT(*) FROM FACT_SALES;
