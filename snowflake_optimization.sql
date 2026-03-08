@@ -1,6 +1,6 @@
 -- Module: Snowflake Performance Optimization & Advanced Features
 -- Project: Retail Chain Sales Analytics Platform
--- Author: Shubhranshu Acharya
+-- Author: Aditya Prakash Acharya
 
 
 USE ROLE ACCOUNTADMIN;

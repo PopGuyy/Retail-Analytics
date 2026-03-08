@@ -1,6 +1,6 @@
 -- Project: Retail Chain Sales Analytics Platform
 -- Module: Security & Role-Based Access Control (RBAC)
--- Author: Shubhranshu Acharya
+-- Author: Aditya Prakash Acharya
 
 
 USE ROLE ACCOUNTADMIN;

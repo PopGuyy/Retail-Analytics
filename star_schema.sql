@@ -1,6 +1,6 @@
 -- Project: Retail Chain Sales Analytics Platform
 -- Module: Star Schema Design
--- Author: Shubhranshu Acharya
+-- Author: Aditya Prakash Acharya
 
 CREATE WAREHOUSE retail_wh
 WITH WAREHOUSE_SIZE = 'XSMALL'
