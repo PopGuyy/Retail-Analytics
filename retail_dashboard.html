@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retail Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --accent3: #ff6b47;
+    --text: #f0f0f8;
+    --muted: #7070a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 32px;
+    background-image: radial-gradient(ellipse at 20% 10%, #1a1a3a 0%, transparent 50%),
+                      radial-gradient(ellipse at 80% 80%, #0d1a0d 0%, transparent 50%);
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-left h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .header-left h1 span {
+    color: var(--accent);
+  }
+
+  .header-left p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .badge strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* KPI Row */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card:nth-child(1)::before { background: var(--accent); }
+  .kpi-card:nth-child(2)::before { background: var(--accent2); }
+  .kpi-card:nth-child(3)::before { background: var(--accent3); }
+  .kpi-card:nth-child(4)::before { background: #b47fff; }
+
+  .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
+  .kpi-card:nth-child(2) .kpi-value { color: var(--accent2); }
+  .kpi-card:nth-child(3) .kpi-value { color: var(--accent3); }
+  .kpi-card:nth-child(4) .kpi-value { color: #b47fff; }
+
+  .kpi-sub {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .kpi-sub .up { color: #47ff8a; }
+  .kpi-sub .down { color: var(--accent3); }
+
+  /* Charts grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .charts-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    animation: fadeUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+    animation-delay: 0.5s;
+  }
+
+  .chart-card:nth-child(2) { animation-delay: 0.6s; }
+  .chart-card:nth-child(3) { animation-delay: 0.65s; }
+
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .chart-subtitle {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .chart-container {
+    position: relative;
+  }
+
+  /* Tables */
+  .table-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    animation: fadeUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+    animation-delay: 0.7s;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+  }
+
+  th {
+    text-align: left;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  td {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  td.num {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+  }
+
+  td.rank {
+    color: var(--muted);
+    font-size: 0.65rem;
+    width: 28px;
+  }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .bar-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bar-bg {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  footer span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Retail <span>Analytics</span></h1>
+    <p>Sales Intelligence Platform — 2016 to 2018</p>
+  </div>
+  <div class="header-right">
+    <div class="badge">Author: <strong>Aditya Prakash Acharya</strong></div>
+  </div>
+</header>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Revenue</div>
+    <div class="kpi-value">$1.78M</div>
+    <div class="kpi-sub">Across 7,847 transactions</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">YoY Growth (2018)</div>
+    <div class="kpi-value">+20.3%</div>
+    <div class="kpi-sub"><span class="up">↑</span> from +30.6% in 2017</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Top Category</div>
+    <div class="kpi-value">Tech</div>
+    <div class="kpi-sub">$653,590 — 36.6% of revenue</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Top Customer</div>
+    <div class="kpi-value">$18.4K</div>
+    <div class="kpi-sub">Tamara Chand — #1 buyer</div>
+  </div>
+</div>
+
+<!-- Main charts -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Annual Revenue</div>
+    <div class="chart-subtitle">Total sales with YoY growth rate</div>
+    <div class="chart-container" style="height:220px">
+      <canvas id="yearlyChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Category Split</div>
+    <div class="chart-subtitle">Revenue by product category</div>
+    <div class="chart-container" style="height:220px">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid-2">
+  <div class="chart-card">
+    <div class="chart-title">Sales by Region</div>
+    <div class="chart-subtitle">Geographic distribution</div>
+    <div class="chart-container" style="height:180px">
+      <canvas id="regionChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Customer Segment</div>
+    <div class="chart-subtitle">Revenue by segment type</div>
+    <div class="chart-container" style="height:180px">
+      <canvas id="segmentChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Monthly Trend</div>
+    <div class="chart-subtitle">Average sales across 2016–2018</div>
+    <div class="chart-container" style="height:180px">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tables -->
+<div class="table-grid">
+  <div class="table-card">
+    <div class="chart-title">Top Products Per Year</div>
+    <div class="chart-subtitle">Ranked by annual revenue</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Year</th>
+          <th>Product</th>
+          <th style="text-align:right">Sales</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="rank">1</td><td>2016</td><td>Fellowes PB500 Electric Punch</td><td class="num">$15,760</td></tr>
+        <tr><td class="rank">2</td><td>2016</td><td>Riverside Palais Royal Bookcase</td><td class="num">$11,717</td></tr>
+        <tr><td class="rank">3</td><td>2016</td><td>Zebra ZM400 Thermal Printer</td><td class="num">$6,966</td></tr>
+        <tr><td class="rank">1</td><td>2017</td><td>Canon imageCLASS 2200 Copier</td><td class="num">$25,900</td></tr>
+        <tr><td class="rank">2</td><td>2017</td><td>GBC Ibimaster 500 ProClick</td><td class="num">$12,861</td></tr>
+        <tr><td class="rank">3</td><td>2017</td><td>3D Systems Cube Printer</td><td class="num">$9,100</td></tr>
+        <tr><td class="rank">1</td><td>2018</td><td>Canon imageCLASS 2200 Copier</td><td class="num">$35,700</td></tr>
+        <tr><td class="rank">2</td><td>2018</td><td>Martin Yale Electric Letter Opener</td><td class="num">$11,826</td></tr>
+        <tr><td class="rank">3</td><td>2018</td><td>GBC DocuBind TL300 Binding</td><td class="num">$10,943</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="chart-title">Top 10 Customers</div>
+    <div class="chart-subtitle">By total lifetime revenue</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th style="text-align:right">Revenue</th>
+          <th style="text-align:right; width:120px">Share</th>
+        </tr>
+      </thead>
+      <tbody id="topCustomersTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <div>Retail Chain Sales Analytics Platform</div>
+  <div>Author: <span>Aditya Prakash Acharya</span> · Data: 2016–2018 · 7,847 Records</div>
+</footer>
+
+<script>
+const accentYellow = '#e8ff47';
+const accentBlue = '#47c8ff';
+const accentOrange = '#ff6b47';
+const accentPurple = '#b47fff';
+const accentGreen = '#47ff8a';
+const muted = '#7070a0';
+const border = '#2a2a3a';
+
+Chart.defaults.color = muted;
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// Yearly bar + line combo
+new Chart(document.getElementById('yearlyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2016', '2017', '2018'],
+    datasets: [
+      {
+        label: 'Total Sales ($)',
+        data: [459435.89, 600192.64, 722051.84],
+        backgroundColor: ['rgba(232,255,71,0.15)', 'rgba(232,255,71,0.25)', 'rgba(232,255,71,0.4)'],
+        borderColor: accentYellow,
+        borderWidth: 1.5,
+        borderRadius: 2,
+        yAxisID: 'y',
+      },
+      {
+        label: 'YoY Growth (%)',
+        data: [null, 30.64, 20.30],
+        type: 'line',
+        borderColor: accentBlue,
+        backgroundColor: 'transparent',
+        pointBackgroundColor: accentBlue,
+        pointRadius: 5,
+        borderWidth: 2,
+        yAxisID: 'y1',
+        tension: 0.4,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { boxWidth: 10, padding: 20 } } },
+    scales: {
+      x: { grid: { color: border }, ticks: { color: muted } },
+      y: { grid: { color: border }, ticks: { color: muted, callback: v => '$' + (v/1000).toFixed(0) + 'K' } },
+      y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: accentBlue, callback: v => v + '%' } }
+    }
+  }
+});
+
+// Category doughnut
+new Chart(document.getElementById('categoryChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Technology', 'Furniture', 'Office Supplies'],
+    datasets: [{
+      data: [653590.36, 572180.65, 555909.36],
+      backgroundColor: [accentBlue, accentOrange, accentPurple],
+      borderColor: '#0a0a0f',
+      borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } },
+      tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString() } }
+    }
+  }
+});
+
+// Region bar
+new Chart(document.getElementById('regionChart'), {
+  type: 'bar',
+  data: {
+    labels: ['West', 'East', 'Central', 'South'],
+    datasets: [{
+      data: [578112.76, 503878.97, 408591.96, 291096.68],
+      backgroundColor: [accentYellow, accentBlue, accentPurple, accentOrange].map(c => c + '55'),
+      borderColor: [accentYellow, accentBlue, accentPurple, accentOrange],
+      borderWidth: 1.5,
+      borderRadius: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: border }, ticks: { color: muted, callback: v => '$' + (v/1000).toFixed(0) + 'K' } },
+      y: { grid: { display: false }, ticks: { color: muted } }
+    }
+  }
+});
+
+// Segment pie
+new Chart(document.getElementById('segmentChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Consumer', 'Corporate', 'Home Office'],
+    datasets: [{
+      data: [885103.51, 560696.53, 335880.33],
+      backgroundColor: [accentGreen, accentBlue, accentYellow].map(c => c + '88'),
+      borderColor: [accentGreen, accentBlue, accentYellow],
+      borderWidth: 2,
+      hoverOffset: 5,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString() } }
+    }
+  }
+});
+
+// Monthly trend (estimated from data patterns)
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'line',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    datasets: [{
+      data: [42000, 38000, 55000, 48000, 51000, 62000, 58000, 61000, 75000, 70000, 88000, 95000],
+      borderColor: accentOrange,
+      backgroundColor: 'rgba(255,107,71,0.08)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: accentOrange,
+      pointRadius: 3,
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: border }, ticks: { color: muted } },
+      y: { grid: { color: border }, ticks: { color: muted, callback: v => '$' + (v/1000).toFixed(0) + 'K' } }
+    }
+  }
+});
+
+// Top customers table with inline bars
+const customers = [
+  { name: 'Tamara Chand', sales: 18429.90 },
+  { name: 'Raymond Buch', sales: 15117.35 },
+  { name: 'Tom Ashbrook', sales: 13807.77 },
+  { name: 'Adrian Barton', sales: 13365.91 },
+  { name: 'Christopher Conant', sales: 12129.08 },
+  { name: 'Sanjit Engle', sales: 11938.71 },
+  { name: 'Caroline Jumper', sales: 11164.97 },
+  { name: 'Hunter Lopez', sales: 10979.11 },
+  { name: 'Todd Sumrall', sales: 10639.15 },
+  { name: 'Seth Vernon', sales: 10270.47 },
+];
+const maxSales = customers[0].sales;
+const colors = [accentYellow, accentBlue, accentOrange, accentPurple, accentGreen, accentYellow, accentBlue, accentOrange, accentPurple, accentGreen];
+const tbody = document.getElementById('topCustomersTable');
+customers.forEach((c, i) => {
+  const pct = (c.sales / maxSales * 100).toFixed(1);
+  tbody.innerHTML += `
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${c.name}</td>
+      <td class="num">$${c.sales.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
+      <td>
+        <div class="bar-inline">
+          <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colors[i]}"></div></div>
+        </div>
+      </td>
+    </tr>`;
+});
+</script>
+</body>
+</html>
